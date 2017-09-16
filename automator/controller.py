@@ -15,7 +15,8 @@ class Controller(object):
 
     def _recv_into_buffer(self, num, timeout):
         """Receives at least num characters into self._buffer
-        Raises Timeout if time is up and num has not been reached
+
+        Returns data received if timeout was hit, and None otherwise
         """
         data = ""
 
@@ -29,7 +30,7 @@ class Controller(object):
         self._buffer += data
 
         if len(data) < num:
-            raise Timeout(data)
+            return data
 
     def _update_buffers(self):
         lines = self._buffer.split("\n")

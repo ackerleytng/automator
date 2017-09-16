@@ -26,11 +26,10 @@ def _tester_0(pipe):
 
 
 def _testee_0(controller):
-    with pytest.raises(timeout.Timeout) as e:
-        print "Receiving with timeout of 3 seconds"
-        controller._recv_into_buffer(12, 3)
+    print "Receiving with timeout of 3 seconds"
+    d = controller._recv_into_buffer(12, 3)
 
-    assert "some line\n" in e.value.message
+    assert d == "some line\n"
     assert "some line\n" in controller._buffer
     assert [] == controller._line_buffer
 
