@@ -6,10 +6,11 @@
 import pytest
 import socket
 import time
-from automator import telnet_controller
-from automator import timeout
 import multiprocessing
 import sys
+
+from automator import telnet_controller
+from automator.controller import Controller as C
 
 
 def print_and_send(pipe, d):
@@ -17,7 +18,72 @@ def print_and_send(pipe, d):
     pipe.send(d)
 
 
-def _tester_0(pipe):
+def helper_pipe_closed(pipe):
+    print_and_send(pipe, "a")
+
+
+def test_pipe_closed(controller):
+    with pytest.raises(IOError) as e:
+        controller._recv_into_buffer(2)
+
+    assert e.value.message == "Shell closed"
+
+
+def helper_recv_lines(pipe):
+    for i in range(2):
+        print_and_send(pipe, "a" * 16 + "\n")
+
+    # Hold the pipe open for 1.1 seconds
+    #   because we will be using a timeout of 1
+    # timeout should only happen after the first 2 lines have been received
+    #   (on the iteration that returns (C.UNKNOWN, ""))
+    time.sleep(1.1)
+
+
+def test_recv_lines(controller):
+    for i, r in enumerate(controller._recv_lines()):
+        if i < 2:
+            assert (C.LINE, "a" * 16 + "\n") == r
+        elif i == 2:
+            assert (C.UNKNOWN, "") == r
+
+    assert i == 2
+
+
+def helper_recv_less_than_sent(pipe):
+    print_and_send(pipe, "12345678")
+    # Receiving should be fast enough, no need to hold open
+
+
+def test_recv_less_than_sent(controller):
+    d = controller._recv_into_buffer(4, 3)
+    assert d is None
+    assert "1234" == controller._buffer
+    assert [] == controller._line_buffer
+
+
+def helper_recv_1_more_than_sent_hold_pipe_open(pipe):
+    print_and_send(pipe, "aaaa")
+
+    # Hold pipe open so that timeout will be hit
+    time.sleep(5.1)
+
+
+def test_recv_1_more_than_sent_hold_pipe_open(controller):
+    assert controller._recv_into_buffer(5, timeout=5) == "aaaa"
+
+
+def helper_exact(pipe):
+    print_and_send(pipe, "aaaa")
+
+
+def test_exact(controller):
+    # If there is no timeout, don't return anything
+    assert controller._recv_into_buffer(4) is None
+    assert controller._buffer == "aaaa"
+
+
+def helper_recv_with_delay(pipe):
     print_and_send(pipe, "some line\n")
 
     time.sleep(5)
@@ -25,7 +91,7 @@ def _tester_0(pipe):
     print_and_send(pipe, "some other line\n")
 
 
-def _testee_0(controller):
+def test_recv_with_delay(controller):
     print "Receiving with timeout of 3 seconds"
     d = controller._recv_into_buffer(12, 3)
 
@@ -37,53 +103,30 @@ def _testee_0(controller):
     time.sleep(3)
 
 
-def _tester_1(pipe):
-    print_and_send(pipe, "12345678")
-
-
-def _testee_1(controller):
-    d = controller._recv_into_buffer(4, 3)
-    assert d is None
-    assert "1234" == controller._buffer
-    assert [] == controller._line_buffer
-
-
-# Just keep specifying testers and testees above testees
-
-def get_params():
+@pytest.fixture
+def controller(request):
+    test_name = request.node.name
+    helper_name = test_name.replace("test", "helper")
     current_module = sys.modules[__name__]
-    num_testers = len([f for f in dir(current_module)
-                       if f.startswith("_tester")])
+    helper = getattr(current_module, helper_name)
 
-    # Used [::-1] to reverse the order of test cases so that
-    #   the latest test case that I add will be the first to
-    #   get tested (more likely to be the one I'm interested in)
-    return ([(getattr(current_module, "_tester_{}".format(i)),
-             getattr(current_module, "_testee_{}".format(i)))
-            for i in range(num_testers)][::-1],
-            ["test_pair_{}".format(i) for i in range(num_testers)][::-1])
+    sending_end, recving_end = socket.socketpair()
 
-
-params, ids = get_params()
-
-
-@pytest.mark.parametrize("tester, testee", params, ids=ids)
-def test__recv_into_buffer(tester, testee):
-    parent_end, child_end = socket.socketpair()
+    # To make it look nicer if -s flag is used for pytest
+    print
 
     def wrapper():
-        parent_end.close()
-        c = telnet_controller.TelnetController("test", child_end)
+        recving_end.close()
 
-        testee(c)
+        helper(sending_end)
 
-        child_end.close()
+        sending_end.close()
 
     p = multiprocessing.Process(target=wrapper)
     p.start()
 
-    child_end.close()
-    tester(parent_end)
-    parent_end.close()
+    sending_end.close()
+    yield telnet_controller.TelnetController("test", recving_end)
+    recving_end.close()
 
     p.join()
