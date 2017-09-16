@@ -11,6 +11,61 @@ import sys
 
 from automator import telnet_controller
 from automator.controller import Controller as C
+from automator.controller import ControllerException
+from automator.responses import Responses
+
+
+def helper_recv_response(pipe):
+    print_and_send(pipe, "please send 'moo' to continue: ")
+
+    if "moo" == pipe.recv(3):
+        print_and_send(pipe, "thanks\n")
+        print_and_send(pipe, "# ")
+
+    # Hold the pipe open for 1.1 seconds
+    #   because we will be using a timeout of 1
+    # timeout should only happen after the first 2 lines have been received
+    #   (on the iteration that returns (C.UNKNOWN, ""))
+    time.sleep(1.1)
+
+
+def test_recv_response(controller):
+    r = Responses([
+        ("continue: ", "moo")
+    ])
+    for i, l in enumerate(controller._recv_handle_lines(responses=r)):
+        print "Received |{}|".format(repr(l))
+        if i == 0:
+            # "moo\n" does not appear in this line because the pipe
+            #   that we're using isn't like a shell that echos back
+            assert ("please send 'moo' to continue: thanks\n") == l
+        elif i == 1:
+            assert ("# ") == l
+
+    # assert i == 1
+
+
+def helper_recv_handle_lines(pipe):
+    for i in range(2):
+        print_and_send(pipe, "a" * 16 + "\n")
+
+    print_and_send(pipe, "b")
+
+    # Hold the pipe open for longer
+    #   because we will be using a timeout of 1
+    # timeout should only happen after the first 2 lines have been received
+    #   (on the iteration that returns (C.UNKNOWN, ""))
+    time.sleep(2)
+
+
+def test_recv_handle_lines(controller):
+    with pytest.raises(ControllerException) as e:
+        for i, l in enumerate(controller._recv_handle_lines()):
+            print "Received |{}|".format(repr(l))
+            if i < 2:
+                assert ("a" * 16 + "\n") == l
+
+    assert e.value.message == "Can't find appropriate response for 'b'"
 
 
 def print_and_send(pipe, d):

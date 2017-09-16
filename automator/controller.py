@@ -5,6 +5,11 @@ import sys
 from responses import Responses
 
 
+class ControllerException(Exception):
+    def __init__(self, msg):
+        super(ControllerException, self).__init__(msg)
+
+
 class Controller(object):
     (LINE, UNKNOWN) = range(2)
 
@@ -46,7 +51,7 @@ class Controller(object):
 
         # Keep receiving until timeout
         while ret is None:
-            ret = self._recv_into_buffer(16, timeout)
+            ret = self._recv_into_buffer(16, timeout=timeout)
 
         # Process everything that was received
         lines = self._buffer.split("\n")
@@ -61,15 +66,49 @@ class Controller(object):
         # Yield the leftovers
         yield (Controller.UNKNOWN, self._buffer)
 
-    def _recv_handle_lines(self, responses=Responses([])):
+    def _recv_handle_lines(self, timeout=1, responses=Responses([]),
+                           shell_prompts=["$ ", "# ", "] "]):
+        yielded_before = False
         response = None
+        ok_to_exit = False
 
-        for t, data in self._recv_lines:
-            response = responses.update_response(data, response)
-
-            if t == Controller.LINE:
-                yield data
-            elif t == Controller.UNKNOWN:
+        while not ok_to_exit:
+            for t, data in self._recv_lines(timeout=timeout):
                 response = responses.update_response(data, response)
-                if response is not None:
-                    self._shell.send(response + "\n")
+
+                if t == Controller.LINE:
+                    yielded_before = True
+                    yield data
+                elif t == Controller.UNKNOWN:
+                    # If we see a prompt, we can stop receiving
+                    if any([data.endswith(p) for p in shell_prompts]):
+                        yielded_before = True
+                        yield data
+
+                        # Stop receiving
+                        ok_to_exit = True
+                        break
+
+                    # Try and respond
+                    response = responses.update_response(data, response)
+                    if response is not None:
+                        self.send(response)
+                    else:
+                        m = ("Can't find appropriate "
+                             "response for {}".format(repr(data)))
+                        raise ControllerException(m)
+                else:
+                    m = "Got unknown type {}".format(repr(t))
+                    raise ControllerException(m)
+
+        if not yielded_before:
+            m = "Didn't receive any lines"
+            raise ControllerException(m)
+        else:
+            print "_recv_handle_lines exiting properly"
+
+    def send(self, data):
+        self._shell.send(data + "\n")
+
+    def send_bytes(self, data):
+        self._shell.send(data)
