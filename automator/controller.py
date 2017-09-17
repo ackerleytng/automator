@@ -1,6 +1,4 @@
 import select
-import sys
-
 
 from responses import Responses
 
@@ -21,7 +19,7 @@ class Controller(object):
         # The buffer for lines
         self._line_buffer = []
 
-    def _recv_into_buffer(self, num, timeout=1):
+    def _recv_into_buffer(self, num, timeout=0.2):
         """Receives at least num characters into self._buffer
 
         Returns data received if timeout was hit, and None otherwise
@@ -33,7 +31,6 @@ class Controller(object):
             rl, wl, xl = select.select([self._shell], [], [], timeout)
             if rl:
                 d = self._shell.recv(1)
-                # sys.stdout.write("|{}|".format(repr(d)))
                 if d == "":
                     raise IOError("Shell closed")
                 else:
@@ -46,7 +43,7 @@ class Controller(object):
 
         return ret
 
-    def _recv_lines(self, timeout=1):
+    def _recv_lines(self, timeout=0.2):
         ret = None
 
         # Keep receiving until timeout
@@ -61,22 +58,46 @@ class Controller(object):
 
         # Yield all the lines in the buffer first
         while self._line_buffer:
-            yield (Controller.LINE, self._line_buffer.pop() + "\n")
+            yield (Controller.LINE, self._line_buffer.pop(0) + "\n")
 
         # Yield the leftovers
         yield (Controller.UNKNOWN, self._buffer)
 
-    def _recv_handle_lines(self, timeout=1, responses=Responses([]),
+    def _recv_handle_lines(self, responses=Responses([]),
+                           tries=32, timeout=0.2,
                            shell_prompts=["$ ", "# ", "] "]):
+        """Receives and handles the lines coming in from the remote side.
+
+        responses: a Responses object, allowing you to specify responses
+        to possible expected prompts in between shell prompts
+        (defaults to no expected prompts/responses)
+
+        shell_prompts: a list of shell prompts that you expect to be seeing.
+        (defaults to "$ ", "# " and "] ")
+
+        timeout: the number of seconds to wait before we stop waiting
+        for blocks of bytes (16 in this case)
+        The higher this value is, the fewer errors you will get,
+        but the longer you have to wait for a correct command to
+        complete
+        (defaults to 0.2 seconds)
+
+        tries: the number of times we are willing to wait for
+        a command to complete
+        The actual time spent waiting is approximately
+        (tries * timeout) seconds.
+        (defaults to 32)
+        """
         yielded_before = False
         response = None
-        ok_to_exit = False
+        max_tries = tries
 
-        while not ok_to_exit:
+        while tries > 0:
             for t, data in self._recv_lines(timeout=timeout):
                 response = responses.update_response(data, response)
 
                 if t == Controller.LINE:
+                    tries = max_tries
                     yielded_before = True
                     yield data
                 elif t == Controller.UNKNOWN:
@@ -86,12 +107,16 @@ class Controller(object):
                         yield data
 
                         # Stop receiving
-                        ok_to_exit = True
+                        tries = 0
                         break
 
+                    if data == "":
+                        tries -= 1
+                        continue
+
                     # Try and respond
-                    response = responses.update_response(data, response)
                     if response is not None:
+                        tries = max_tries
                         self.send(response)
                     else:
                         m = ("Can't find appropriate "
@@ -104,8 +129,6 @@ class Controller(object):
         if not yielded_before:
             m = "Didn't receive any lines"
             raise ControllerException(m)
-        else:
-            print "_recv_handle_lines exiting properly"
 
     def send(self, data):
         self._shell.send(data + "\n")
