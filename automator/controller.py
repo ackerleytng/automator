@@ -90,11 +90,12 @@ class Controller(object):
         """
         yielded_before = False
         response = None
+        instance = None
         max_tries = tries
 
         while tries > 0:
             for t, data in self._recv_lines(timeout=timeout):
-                response = responses.update_response(data, response)
+                response, instance = responses.update_response(data, response)
 
                 if t == Controller.LINE:
                     tries = max_tries
@@ -114,6 +115,7 @@ class Controller(object):
                     if response is not None:
                         tries = max_tries
                         self.send(response)
+                        responses.use(instance)
                     elif data == "":
                         tries -= 1
                     else:

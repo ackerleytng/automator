@@ -15,6 +15,43 @@ from automator.controller import ControllerException
 from automator.responses import Responses
 
 
+def helper_diff_response_same_empty_prompt(pipe):
+    check = ""
+    while check != "moo":
+        print_and_send(pipe, "please send 'moo':\n")
+        check = pipe.recv(3)
+    print_and_send(pipe, "thanks\n")
+
+    check = ""
+    while check != "meow":
+        print_and_send(pipe, "please send 'meow' this time:\n")
+        check = pipe.recv(4)
+    print_and_send(pipe, "thanks\n")
+
+    print_and_send(pipe, "# ")
+
+    # Hold the pipe open for 1.1 seconds
+    #   because we will be using a timeout of 1
+    # timeout should only happen after the first 2 lines have been received
+    #   (on the iteration that returns (C.UNKNOWN, ""))
+    time.sleep(1.1)
+
+
+def test_diff_response_same_empty_prompt(controller):
+    r = Responses([
+        ("", "moo"),
+        ("", "meow")
+    ])
+    for i, l in enumerate(controller._recv_handle_lines(responses=r)):
+        print "Received |{}|".format(repr(l))
+        if i == 0:
+            # "moo\n" does not appear in this line because the pipe
+            #   that we're using isn't like a shell that echos back
+            assert ("please send 'moo':\n") == l
+        elif i == 1:
+            assert ("thanks\n") == l
+
+
 def helper_recv_response(pipe):
     print_and_send(pipe, "please send 'moo' to continue: ")
 
@@ -42,7 +79,7 @@ def test_recv_response(controller):
         elif i == 1:
             assert ("# ") == l
 
-    # assert i == 1
+    assert i == 1
 
 
 def helper_recv_handle_lines(pipe):
