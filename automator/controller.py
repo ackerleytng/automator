@@ -112,7 +112,7 @@ class Controller(object):
 
                     if data == "":
                         tries -= 1
-                        continue
+                        break
 
                     # Try and respond
                     if response is not None:
