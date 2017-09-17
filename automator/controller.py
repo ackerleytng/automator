@@ -110,14 +110,12 @@ class Controller(object):
                         tries = 0
                         break
 
-                    if data == "":
-                        tries -= 1
-                        break
-
                     # Try and respond
                     if response is not None:
                         tries = max_tries
                         self.send(response)
+                    elif data == "":
+                        tries -= 1
                     else:
                         m = ("Can't find appropriate "
                              "response for {}".format(repr(data)))

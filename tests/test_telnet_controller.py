@@ -38,6 +38,27 @@ def test_whoami(ctrlr):
     assert "$ " in data
 
 
+def test_setup_temp_file(ctrlr):
+    r = Responses([
+        ("password", "password")
+    ])
+    ctrlr.send("sudo touch test")
+    data = "".join(ctrlr._recv_handle_lines(responses=r))
+    assert "sudo touch test" in data
+    assert "password" in data
+    assert "$ " in data
+
+
+def test_remove_temp_file(ctrlr):
+    ctrlr.send("rm test")
+    r = Responses([
+        ("remove write-protected regular empty file", "yes")
+    ])
+    data = "".join(ctrlr._recv_handle_lines(responses=r))
+    assert "yes" in data
+    assert "$ " in data
+
+
 def test_sudo(ctrlr):
     r = Responses([
         ("password for user: ", "password"),
@@ -57,6 +78,54 @@ def test_whoami_root(ctrlr):
 
 def test_exit(ctrlr):
     ctrlr.send("exit")
+    data = ''.join(ctrlr._recv_handle_lines())
+    assert "$ " in data
+
+
+def test_write_file(ctrlr):
+    ctrlr.send("echo 'echo \"enter anything on the "
+               "next line to proceed:\"' > test.sh")
+    data = ''.join(ctrlr._recv_handle_lines())
+    assert "$ " in data
+
+
+def test_append_to_file(ctrlr):
+    ctrlr.send("echo 'read' >> test.sh")
+    data = ''.join(ctrlr._recv_handle_lines())
+    assert "$ " in data
+
+
+def test_no_prompt_response(ctrlr):
+    ctrlr.send("bash test.sh")
+    r = Responses([
+        ("", "anything")
+    ])
+    data = ''.join(ctrlr._recv_handle_lines(responses=r))
+    assert "$ " in data
+
+
+def test_append_more_stuff(ctrlr):
+    ctrlr.send("echo 'echo \"enter anything again on the "
+               "next line to proceed:\"' >> test.sh")
+    data = ''.join(ctrlr._recv_handle_lines())
+    assert "$ " in data
+    ctrlr.send("echo 'read' >> test.sh")
+    data = ''.join(ctrlr._recv_handle_lines())
+    assert "$ " in data
+
+
+def test_same_response_twice(ctrlr):
+    ctrlr.send("bash test.sh")
+    r = Responses([
+        ("", "anything")
+    ])
+    data = ''.join(ctrlr._recv_handle_lines(responses=r))
+    assert len(data.split("anything\r\n")) == 3
+    assert "$ " in data
+
+
+def test_delete_file(ctrlr):
+    ctrlr.send("rm test.sh")
     data = ''.join(ctrlr._recv_handle_lines())
     assert "$ " in data
 
