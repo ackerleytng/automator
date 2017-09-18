@@ -15,6 +15,48 @@ from automator.controller import ControllerException
 from automator.responses import Responses
 
 
+def helper_three_diff_responses(pipe):
+    print_and_send(pipe, "please send the required words:\n")
+
+    required_list = ["red\n", "yellow\n", "blue\n"]
+
+    i = 0
+    while i < len(required_list):
+        required = required_list[i]
+        check = pipe.recv(len(required))
+        print "Expected |{}|, got |{}|".format(repr(required), repr(check))
+        if check == required:
+            i += 1
+        else:
+            return
+
+    print_and_send(pipe, "thanks\n")
+
+    print_and_send(pipe, "$ ")
+
+    # Hold the pipe open for 1.1 seconds
+    #   because we will be using a timeout of 1
+    # timeout should only happen after the first 2 lines have been received
+    #   (on the iteration that returns (C.UNKNOWN, ""))
+    time.sleep(1.1)
+
+
+def test_three_diff_responses(controller):
+    r = Responses([
+        ("", "red"),
+        ("", "yellow"),
+        ("", "blue")
+    ])
+    for i, l in enumerate(controller._recv_handle_lines(responses=r)):
+        print "Received |{}|".format(repr(l))
+        if i == 0:
+            assert ("please send the required words:\n") == l
+        elif i == 1:
+            assert ("thanks\n") == l
+        else:
+            assert ("$ ") == l
+
+
 def helper_diff_response_same_empty_prompt(pipe):
     check = ""
     while check != "moo":
