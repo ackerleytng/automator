@@ -4,26 +4,36 @@ import sys
 from automator.controller import Controller
 from automator.responses import Responses
 
+from automator.ssh_shell import SshShell
 from automator.telnet_shell import TelnetShell
 
 
 TEST_IP = "192.168.31.131"
 
 
-@pytest.fixture(scope="module")
-def ctrlr():
-    s = TelnetShell(TEST_IP)
+@pytest.fixture(scope="module", params=[SshShell, TelnetShell])
+def ctrlr(request):
+    s = request.param(TEST_IP)
     return Controller(s)
 
 
 def test_login(ctrlr):
+    # For TelnetShell, SshShell won't be using this
     r = Responses([
         ("login: ", "user"),
         ("Password: ", "password"),
     ])
 
+    # Calling _recv_handle_lines also causes python to
+    #   access fileno(), which triggers .*Shell.start()
     data = ''.join(ctrlr._recv_handle_lines(responses=r))
+    print data
     assert "$ " in data
+
+    if isinstance(ctrlr, TelnetShell):
+        assert "login: user" in data
+    elif isinstance(ctrlr, SshShell):
+        assert "login: user" not in data
 
 
 def test_whoami(ctrlr):
