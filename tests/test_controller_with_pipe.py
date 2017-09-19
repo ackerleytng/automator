@@ -9,7 +9,6 @@ import time
 import multiprocessing
 import sys
 
-from automator import telnet_controller
 from automator.controller import Controller as C
 from automator.controller import ControllerException
 from automator.responses import Responses
@@ -260,7 +259,7 @@ def controller(request):
     p.start()
 
     sending_end.close()
-    yield telnet_controller.TelnetController("test", recving_end)
+    yield C(recving_end)
     recving_end.close()
 
     p.join()

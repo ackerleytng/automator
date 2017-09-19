@@ -1,12 +1,7 @@
-"""This test is done using socketpair, which can also be handled by
-+ select()
-+ send()
-+ recv()
-"""
 import pytest
 import sys
 
-from automator.telnet_controller import TelnetController
+from automator.controller import Controller
 from automator.responses import Responses
 
 from automator.telnet_shell import TelnetShell
@@ -18,7 +13,7 @@ TEST_IP = "192.168.31.131"
 @pytest.fixture(scope="module")
 def ctrlr():
     s = TelnetShell(TEST_IP)
-    return TelnetController("test", s)
+    return Controller(s)
 
 
 def test_login(ctrlr):
