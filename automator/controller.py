@@ -63,10 +63,11 @@ class Controller(object):
         # Yield the leftovers
         yield (Controller.UNKNOWN, self._buffer)
 
-    def _recv_handle_lines(self, responses=Responses([]),
-                           tries=32, timeout=0.2,
-                           shell_prompts=["$ ", "# ", "] "]):
+    def recv(self, responses=Responses([]),
+             tries=32, timeout=0.2,
+             shell_prompts=["$ ", "# ", "] "]):
         """Receives and handles the lines coming in from the remote side.
+        Yields lines as they come in.
 
         responses: a Responses object, allowing you to specify responses
         to possible expected prompts in between shell prompts

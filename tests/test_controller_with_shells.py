@@ -24,9 +24,9 @@ def test_login(ctrlr):
         ("Password: ", "password"),
     ])
 
-    # Calling _recv_handle_lines also causes python to
+    # Calling recv also causes python to
     #   access fileno(), which triggers .*Shell.start()
-    data = ''.join(ctrlr._recv_handle_lines(responses=r))
+    data = ''.join(ctrlr.recv(responses=r))
     print data
     assert "$ " in data
 
@@ -38,7 +38,7 @@ def test_login(ctrlr):
 
 def test_whoami(ctrlr):
     ctrlr.send("whoami")
-    data = ''.join(ctrlr._recv_handle_lines())
+    data = ''.join(ctrlr.recv())
     assert "user" in data
     assert "$ " in data
 
@@ -48,7 +48,7 @@ def test_setup_temp_file(ctrlr):
         ("password", "password")
     ])
     ctrlr.send("sudo touch test")
-    data = "".join(ctrlr._recv_handle_lines(responses=r))
+    data = "".join(ctrlr.recv(responses=r))
     assert "sudo touch test" in data
     assert "password" in data
     assert "$ " in data
@@ -59,7 +59,7 @@ def test_remove_temp_file(ctrlr):
     r = Responses([
         ("remove write-protected regular empty file", "yes")
     ])
-    data = "".join(ctrlr._recv_handle_lines(responses=r))
+    data = "".join(ctrlr.recv(responses=r))
     assert "yes" in data
     assert "$ " in data
 
@@ -70,33 +70,33 @@ def test_sudo(ctrlr):
     ])
 
     ctrlr.send("sudo su")
-    data = ''.join(ctrlr._recv_handle_lines(responses=r))
+    data = ''.join(ctrlr.recv(responses=r))
     assert "# " in data
 
 
 def test_whoami_root(ctrlr):
     ctrlr.send("whoami")
-    data = ''.join(ctrlr._recv_handle_lines())
+    data = ''.join(ctrlr.recv())
     assert "root" in data
     assert "# " in data
 
 
 def test_exit(ctrlr):
     ctrlr.send("exit")
-    data = ''.join(ctrlr._recv_handle_lines())
+    data = ''.join(ctrlr.recv())
     assert "$ " in data
 
 
 def test_write_file(ctrlr):
     ctrlr.send("echo 'echo \"enter anything on the "
                "next line to proceed:\"' > test.sh")
-    data = ''.join(ctrlr._recv_handle_lines())
+    data = ''.join(ctrlr.recv())
     assert "$ " in data
 
 
 def test_append_to_file(ctrlr):
     ctrlr.send("echo 'read' >> test.sh")
-    data = ''.join(ctrlr._recv_handle_lines())
+    data = ''.join(ctrlr.recv())
     assert "$ " in data
 
 
@@ -105,17 +105,17 @@ def test_no_prompt_response(ctrlr):
     r = Responses([
         ("", "anything")
     ])
-    data = ''.join(ctrlr._recv_handle_lines(responses=r))
+    data = ''.join(ctrlr.recv(responses=r))
     assert "$ " in data
 
 
 def test_append_more_stuff(ctrlr):
     ctrlr.send("echo 'echo \"enter anything again on the "
                "next line to proceed:\"' >> test.sh")
-    data = ''.join(ctrlr._recv_handle_lines())
+    data = ''.join(ctrlr.recv())
     assert "$ " in data
     ctrlr.send("echo 'read' >> test.sh")
-    data = ''.join(ctrlr._recv_handle_lines())
+    data = ''.join(ctrlr.recv())
     assert "$ " in data
 
 
@@ -124,14 +124,14 @@ def test_same_response_twice(ctrlr):
     r = Responses([
         ("", "anything")
     ])
-    data = ''.join(ctrlr._recv_handle_lines(responses=r))
+    data = ''.join(ctrlr.recv(responses=r))
     assert len(data.split("anything\r\n")) == 3
     assert "$ " in data
 
 
 def test_delete_file(ctrlr):
     ctrlr.send("rm test.sh")
-    data = ''.join(ctrlr._recv_handle_lines())
+    data = ''.join(ctrlr.recv())
     assert "$ " in data
 
 
@@ -144,7 +144,7 @@ def test_ping(ctrlr):
     ctrlr.send("ping -c4 localhost")
 
     data = []
-    for l in ctrlr._recv_handle_lines():
+    for l in ctrlr.recv():
         sys.stdout.write(l)
         data.append(l)
 
