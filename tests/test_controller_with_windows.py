@@ -2,7 +2,6 @@ import pytest
 import sys
 
 from automator.controller import Controller
-from automator.responses import Responses
 
 from automator.ssh_shell import SshShell
 
@@ -22,7 +21,7 @@ def test_login(ctrlr):
 
 
 def test_ipconfig(ctrlr):
-    ctrlr.send("ipconfig\r")
+    ctrlr.send("ipconfig")
     data = ''.join(ctrlr.recv())
     assert "Windows IP Configuration" in data
     assert TEST_IP in data
@@ -35,7 +34,7 @@ def test_ping(ctrlr):
 
     To observe the lines appearing, use `pytest -s`
     """
-    ctrlr.send("ping -n 4 127.0.0.1\r")
+    ctrlr.send("ping -n 4 127.0.0.1")
 
     data = []
     for l in ctrlr.recv():
