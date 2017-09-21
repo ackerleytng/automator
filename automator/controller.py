@@ -65,7 +65,7 @@ class Controller(object):
 
     def recv(self, responses=Responses([]),
              tries=32, timeout=0.2,
-             shell_prompts=["$ ", "# ", "] "]):
+             shell_prompts=["$ ", "# ", "] ", ">"]):
         """Receives and handles the lines coming in from the remote side.
         Yields lines as they come in.
 
@@ -93,6 +93,8 @@ class Controller(object):
         response = None
         instance = None
         max_tries = tries
+
+        self._line_buffer = []
 
         while tries > 0:
             for t, data in self._recv_lines(timeout=timeout):
