@@ -46,7 +46,7 @@ def test_three_diff_responses(controller):
         ("", "yellow"),
         ("", "blue")
     ])
-    for i, l in enumerate(controller.recv(responses=r)):
+    for i, (_, l) in enumerate(controller._recv_handle_lines(responses=r)):
         print "Received |{}|".format(repr(l))
         if i == 0:
             assert ("please send the required words:\n") == l
@@ -83,7 +83,7 @@ def test_diff_response_same_empty_prompt(controller):
         ("", "moo"),
         ("", "meow")
     ])
-    for i, l in enumerate(controller.recv(responses=r)):
+    for i, (_, l) in enumerate(controller._recv_handle_lines(responses=r)):
         print "Received |{}|".format(repr(l))
         if i == 0:
             # "moo\n" does not appear in this line because the pipe
@@ -111,7 +111,7 @@ def test_recv_response(controller):
     r = Responses([
         ("continue: ", "moo")
     ])
-    for i, l in enumerate(controller.recv(responses=r)):
+    for i, (_, l) in enumerate(controller._recv_handle_lines(responses=r)):
         print "Received |{}|".format(repr(l))
         if i == 0:
             # "moo\n" does not appear in this line because the pipe
@@ -136,9 +136,9 @@ def helper_recv(pipe):
     time.sleep(2)
 
 
-def test_recv(controller):
+def test_recv_lines(controller):
     with pytest.raises(ControllerException) as e:
-        for i, l in enumerate(controller.recv()):
+        for i, (_, l) in enumerate(controller._recv_handle_lines()):
             print "Received |{}|".format(repr(l))
             if i < 2:
                 assert ("a" * 16 + "\n") == l

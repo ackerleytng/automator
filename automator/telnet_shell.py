@@ -1,6 +1,33 @@
+import struct
 import telnetlib
+from telnetlib import DO, DONT, IAC, WILL, WONT, NAWS, SB, SE
+
 
 from network_shell import NetworkShell
+
+
+# Thank you, https://stackoverflow.com/questions/38288887/python-telnetlib-read-until-returns-cut-off-string
+def set_max_window_size(tsocket, command, option):
+    """
+    Set Window size to resolve line width issue
+    Set Windows size command: IAC SB NAWS <16-bit value> <16-bit value> IAC SE
+    --> inform the Telnet server of the window width and height.
+    Refer to https://www.ietf.org/rfc/rfc1073.txt
+    :param tsocket: telnet socket object
+    :param command: telnet Command
+    :param option: telnet option
+    :return: None
+    """
+    if command == DO and option == NAWS:
+        width = struct.pack('!H', 1024)
+        height = struct.pack('!H', 1024)
+        tsocket.send(IAC + WILL + NAWS)
+        tsocket.send(IAC + SB + NAWS + width + height + IAC + SE)
+    # -- below code taken from telnetlib source
+    elif command in (DO, DONT):
+        tsocket.send(IAC + WONT + option)
+    elif command in (WILL, WONT):
+        tsocket.send(IAC + DONT + option)
 
 
 class TelnetShell(NetworkShell):
@@ -24,6 +51,9 @@ class TelnetShell(NetworkShell):
     def start(self):
         self._shell = telnetlib.Telnet(self.host, self.port,
                                        self.timeout)
+        self._shell.set_option_negotiation_callback(set_max_window_size)
+
+        return self
 
     def stop(self):
         self._shell.close()

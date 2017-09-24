@@ -30,6 +30,8 @@ class SshShell(NetworkShell):
         self._shell = client.invoke_shell(width=width)
         self._client = client
 
+        return self
+
     def stop(self):
         self._client.close()
 

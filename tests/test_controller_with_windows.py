@@ -6,26 +6,24 @@ from automator.controller import Controller
 from automator.ssh_shell import SshShell
 
 
-TEST_IP = "192.168.31.132"
+TEST_IP = "192.168.31.180"
 
 
 @pytest.fixture(scope="module")
 def ctrlr():
     s = SshShell(TEST_IP)
-    return Controller(s)
+    return Controller(s).start()
 
 
 def test_login(ctrlr):
-    data = ''.join(ctrlr.recv())
-    assert ">" in data
+    assert "Microsoft Windows" in ctrlr.motd
 
 
 def test_ipconfig(ctrlr):
     ctrlr.send("ipconfig")
-    data = ''.join(ctrlr.recv())
+    data = ctrlr.recv()
     assert "Windows IP Configuration" in data
     assert TEST_IP in data
-    assert ">" in data
 
 
 def test_ping(ctrlr):
@@ -37,7 +35,7 @@ def test_ping(ctrlr):
     ctrlr.send("ping -n 4 127.0.0.1")
 
     data = []
-    for l in ctrlr.recv():
+    for l in ctrlr.recv_live():
         sys.stdout.write(l)
         data.append(l)
 
@@ -45,4 +43,3 @@ def test_ping(ctrlr):
 
     assert "Sent = 4" in output
     assert "TTL=128" in output
-    assert ">" in output
