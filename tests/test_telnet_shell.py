@@ -32,7 +32,7 @@ def test_getting_login_prompt(shell):
 def test_entering_username(shell):
     shell.send("user\n")
     data = _read_until(shell, "Password: ")
-    assert "user\r\nPassword: " == data
+    assert "Password: " in data
 
 
 def test_entering_password(shell):
