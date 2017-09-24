@@ -1,5 +1,11 @@
 from setuptools import setup
 
+test_deps = [
+    'pytest',
+]
+extras = {
+    'test': test_deps,
+}
 
 setup(
     name='automator',
@@ -11,7 +17,6 @@ setup(
     setup_requires=[
         'pytest-runner',
     ],
-    tests_require=[
-        'pytest',
-    ],
+    tests_require=test_deps,
+    extras_require=extras,
 )
