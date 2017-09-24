@@ -13,6 +13,7 @@ setup(
     description='Automator for shell control',
     install_requires=[
         'paramiko',
+        'ptyprocess',
     ],
     setup_requires=[
         'pytest-runner',

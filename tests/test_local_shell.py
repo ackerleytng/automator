@@ -12,6 +12,7 @@ def _read_until(selectable, until):
         for c in rl:
             d = c.recv(1)
             data += d
+            print repr(data)
 
     return data
 

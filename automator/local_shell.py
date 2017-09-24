@@ -1,7 +1,5 @@
-import subprocess
 import os
-import pty
-
+from ptyprocess import PtyProcess
 
 from shell import Shell
 
@@ -10,18 +8,15 @@ class LocalShell(Shell):
     def __init__(self):
         super(LocalShell, self).__init__()
 
-        self._fileno = None
         self._process = None
 
     def fileno(self):
-        if self._fileno is None:
+        if self._process is None:
             self.start()
 
-        return self._fileno
+        return self._process.fileno()
 
-    def start(self):
-        master, slave = pty.openpty()
-
+    def start(self, width=1024):
         # 16 to filter out weird environments that people set
         #   (16 will capture /usr/local/sbin)
         clean_path = ':'.join([e for e in os.environ['PATH'].split(':')
@@ -34,37 +29,24 @@ class LocalShell(Shell):
             "PWD": os.environ["PWD"],
             "HOME": os.environ["HOME"],
             "LANG": os.environ["LANG"],
+            "COLUMNS": "1024",
         }
 
-        self._process = subprocess.Popen(["bash", "-i"],
+        self._process = PtyProcess.spawn(["sh"],
                                          env=clean_env,
-                                         preexec_fn=os.setsid,
-                                         close_fds=True,
-                                         stdin=slave, stdout=slave,
-                                         stderr=slave)
-        self._fileno = master
+                                         dimensions=(width, 80))
 
         return self
 
     def stop(self):
         self.send("exit\n")
 
-        os.close(self._fileno)
-        self._fileno = None
-
-        output = self._process.wait()
-        if output > 0:
-            # Popen.wait() returns -N on mac
-            #   N indicates that the child was terminated by signal N.
-            # Signal 1 is SIGHUP (Hangup detected on controlling terminal),
-            #   which is ok I think.
-            # On Linux it returns 0
-            raise OSError("bash -i did not exit properly. {}".format(output))
-
+        self._process.close()
         self._process = None
 
     def send(self, data):
-        os.write(self._fileno, data)
+        self._process.write(data)
 
     def recv(self, bytes_to_recv):
-        return os.read(self._fileno, bytes_to_recv)
+        # Not completely sure if hard-coding this to 1024 is right
+        return self._process.read(1024)

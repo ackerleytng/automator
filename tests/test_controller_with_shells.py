@@ -6,14 +6,18 @@ from automator.responses import Responses
 
 from automator.ssh_shell import SshShell
 from automator.telnet_shell import TelnetShell
+from automator.local_shell import LocalShell
 
 
 TEST_IP = "192.168.31.131"
 
 
-@pytest.fixture(scope="module", params=[SshShell, TelnetShell])
+@pytest.fixture(scope="module", params=[LocalShell, SshShell, TelnetShell])
 def ctrlr(request):
-    s = request.param(TEST_IP)
+    if request.param == LocalShell:
+        s = request.param()
+    else:
+        s = request.param(TEST_IP)
     c = Controller(s)
 
     if request.param == TelnetShell:
@@ -89,8 +93,6 @@ def test_exit(ctrlr):
 def test_write_file(ctrlr):
     ctrlr.send("echo 'echo \"enter anything on the "
                "next line to proceed:\"' > test.sh")
-    import time
-    time.sleep(1)
     data = ctrlr.recv()
     assert "" == data
 
