@@ -53,11 +53,12 @@ class LocalShell(Shell):
         self._fileno = None
 
         output = self._process.wait()
-        if output != -1:
-            # Popen.wait() returns -N on unix where N indicates that the child
-            #   was terminated by signal N.
+        if output > 0:
+            # Popen.wait() returns -N on mac
+            #   N indicates that the child was terminated by signal N.
             # Signal 1 is SIGHUP (Hangup detected on controlling terminal),
             #   which is ok I think.
+            # On Linux it returns 0
             raise OSError("bash -i did not exit properly. {}".format(output))
 
         self._process = None
