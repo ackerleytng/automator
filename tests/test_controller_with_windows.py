@@ -1,9 +1,9 @@
 import pytest
 import sys
 
-from automator.controller import Controller
+from pynomator.controller import Controller
 
-from automator.ssh_shell import SshShell
+from pynomator.ssh_shell import SshShell
 
 
 TEST_IP = "192.168.31.180"

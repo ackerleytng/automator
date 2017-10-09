@@ -8,9 +8,9 @@ extras = {
 }
 
 setup(
-    name='automator',
+    name='pynomator',
     version='0.0.1',
-    description='Automator for shell control',
+    description='An intuitive shell automation tool',
     install_requires=[
         'paramiko',
         'ptyprocess',

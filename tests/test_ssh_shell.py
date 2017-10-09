@@ -1,7 +1,7 @@
 import select
 import pytest
 
-from automator import ssh_shell
+from pynomator import ssh_shell
 
 # Not sure how to do this other than to hard code this ip
 TEST_IP = "192.168.31.131"

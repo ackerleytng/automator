@@ -1,10 +1,10 @@
 import sys
 
-from automator.ssh_shell import SshShell
-from automator.local_shell import LocalShell
-from automator.telnet_shell import TelnetShell
-from automator.controller import Controller
-from automator.responses import Responses
+from pynomator.ssh_shell import SshShell
+from pynomator.local_shell import LocalShell
+from pynomator.telnet_shell import TelnetShell
+from pynomator.controller import Controller
+from pynomator.responses import Responses
 
 s = TelnetShell("192.168.31.131", username="user", password="password").start()
 # s = LocalShell().start()

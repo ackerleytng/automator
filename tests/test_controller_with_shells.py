@@ -1,12 +1,12 @@
 import pytest
 import sys
 
-from automator.controller import Controller
-from automator.responses import Responses
+from pynomator.controller import Controller
+from pynomator.responses import Responses
 
-from automator.ssh_shell import SshShell
-from automator.telnet_shell import TelnetShell
-from automator.local_shell import LocalShell
+from pynomator.ssh_shell import SshShell
+from pynomator.telnet_shell import TelnetShell
+from pynomator.local_shell import LocalShell
 
 
 TEST_IP = "192.168.31.131"

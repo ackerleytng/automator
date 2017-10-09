@@ -1,7 +1,7 @@
 import select
 import pytest
 
-from automator import local_shell
+from pynomator import local_shell
 
 
 def _read_until(selectable, until):
@@ -33,7 +33,7 @@ def test_ls(shell):
     print data
     assert "README.md" in data
     assert "tests" in data
-    assert "automator" in data
+    assert "pynomator" in data
     assert "$ " in data
 
 

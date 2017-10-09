@@ -1,6 +1,6 @@
-from automator.telnet_shell import TelnetShell
-from automator.controller import Controller
-from automator.responses import Responses
+from pynomator.telnet_shell import TelnetShell
+from pynomator.controller import Controller
+from pynomator.responses import Responses
 
 s = TelnetShell("192.168.31.131", username="user", password="password").start()
 

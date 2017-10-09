@@ -1,10 +1,10 @@
-# Automator: An intuitive shell automation tool
+# Pynomator: An intuitive shell automation tool
 
-Automator is a shell automation tool that gives you intuitive control, as if you are working at an interactive shell.
+Pynomator is a shell automation tool that gives you intuitive control, as if you are working at an interactive shell.
 
-Automator allows you to send commands to the shell at a prompt, and then receive the response from that command.
+Pynomator allows you to send commands to the shell at a prompt, and then receive the response from that command.
 
-Automator works with the ssh and telnet, as well as the local shell.
+Pynomator works with the ssh and telnet, as well as the local shell.
 
 # Usage
 
@@ -71,7 +71,7 @@ $
 
 ## Using `Responses`
 
-Responses are used to guide automator. Here's telnet, done manually:
+Responses are used to guide pynomator. Here's telnet, done manually:
 
 (I passed `USER=` to prevent my username from being used remotely)
 
@@ -120,11 +120,11 @@ ctrlr = Controller(s).start(responses=r)
 
 ### Mechanics of `Responses`
 
-+ Automator will send the response paired with the first prompt in the array that matches
++ Pynomator will send the response paired with the first prompt in the array that matches
 + A 'match' occurs if the prompt was anywhere in received data before input is expected
 + If there is more than one prompt that matches, the response that had been sent the least often will be sent again
-+ Identical prompts may be used to get automator to send certain replies in order
-    + For example, the following will also be able to guide automator to complete a connection to the same Telnet server used above:
++ Identical prompts may be used to get pynomator to send certain replies in order
+    + For example, the following will also be able to guide pynomator to complete a connection to the same Telnet server used above:
     ```
     r = Responses([
         (":", "user"),
@@ -148,8 +148,8 @@ For all those times that you're automating something that takes a while, and you
 ```
 import sys
 
-from automator.ssh_shell import SshShell
-from automator.controller import Controller
+from pynomator.ssh_shell import SshShell
+from pynomator.controller import Controller
 
 s = SshShell("192.168.31.131", username="user", password="password").start()
 ctrlr = Controller(s).start()
@@ -186,8 +186,8 @@ for i, l in enumerate(ctrlr.recv_live()):
 ## Installation for developers
 
 ```
-git clone https://github.com/ackerleytng/automator.git
-cd automator
+git clone https://github.com/ackerleytng/pynomator.git
+cd pynomator
 pip install -e .
 ```
 

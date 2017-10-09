@@ -9,9 +9,9 @@ import time
 import multiprocessing
 import sys
 
-from automator.controller import Controller as C
-from automator.controller import ControllerException
-from automator.responses import Responses
+from pynomator.controller import Controller as C
+from pynomator.controller import ControllerException
+from pynomator.responses import Responses
 
 
 def helper_three_diff_responses(pipe):
