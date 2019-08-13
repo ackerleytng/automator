@@ -1,5 +1,5 @@
 class Responses(object):
-    def __init__(self, pairs):
+    def __init__(self, pairs=[]):
         if not isinstance(pairs, list):
             pairs = list(pairs)
 
